@@ -116,8 +116,9 @@ python make_icon.py new-icon.png icon.ico
 ```
 
 It punches the white corners out to transparent, crops to the artwork's real bounds with a 4% margin,
-and emits 16/24/32/48/64/128/256 px. Check `sheet-light.png` afterwards — if the `M` isn't legible at
-16 px, the source is too detailed.
+and emits 16/24/32/48/64/128/256 px. Look at the 256 px PNG it drops next to the `.ico`, and at how the
+small sizes read on a light desktop — if the letterform isn't legible at 16 px, the source artwork is
+too detailed.
 
 ## Known limitations
 
