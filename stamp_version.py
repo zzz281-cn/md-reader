@@ -24,7 +24,9 @@ def main(argv):
     raw = argv[1].strip() if len(argv) > 1 else ""
     match = SEMVER.match(raw)
     if not match:
-        print("跳过：%r 不是 x.y[.z[.w]] 形式的版本号，保持 version_info.txt 原样" % raw)
+        # 输出一律走 ASCII：GitHub Actions 的 Windows runner 控制台是 cp1252，
+        # print 中文会直接抛 UnicodeEncodeError 把构建打挂。
+        print("skip: %r is not a x.y[.z[.w]] version, version_info.txt left untouched" % raw)
         return 0
 
     parts = [int(g) if g else 0 for g in match.groups()]
@@ -43,12 +45,12 @@ def main(argv):
                  r"\g<1>" + dotted + r"\g<2>", src)
 
     if src == before:
-        print("警告：version_info.txt 里没有匹配到版本字段，检查格式是否被改过")
+        print("ERROR: no version fields matched in version_info.txt, check its format")
         return 1
 
     with open(TARGET, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(src)
-    print("版本资源已写成 %s（%s）" % (dotted, quad))
+    print("version resource set to %s %s" % (dotted, quad))
     return 0
 
 
