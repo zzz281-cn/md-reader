@@ -1,8 +1,12 @@
 # Markdown Reader ｜ Markdown 阅读器
 
+[![build](https://github.com/zzz281-cn/md-reader/actions/workflows/build.yml/badge.svg)](https://github.com/zzz281-cn/md-reader/actions/workflows/build.yml)
+
 Windows 上的轻量 Markdown 阅读 / 编辑工具 —— 原生 WebView2 窗口，不是 Electron 套壳。
 
 **[⬇ 下载最新版](https://github.com/zzz281-cn/md-reader/releases/latest)** ｜ 一个 exe，免安装，不用装 Python
+
+> 每个 Release 都由 GitHub Actions 在本仓库的源码上构建，构建日志公开可查，不是某台机器上手工打的包。
 
 > English documentation: [jump to English](#english)
 
