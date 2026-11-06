@@ -1,0 +1,33 @@
+﻿Markdown Reader 1.0.0
+=====================
+
+怎么运行 / How to run
+--------------------
+双击 MdReader.exe 就行，不用安装，不用装 Python。
+Double-click MdReader.exe. No installer, no Python needed.
+
+打不开怎么办 / If it doesn't start
+---------------------------------
+1) 窗口一片白或双击没反应：缺 Microsoft Edge WebView2 运行时。
+   程序会自己弹框提示，点「是」会打开微软官方下载页，装那个约 2MB 的
+   Evergreen Runtime（选 x64），装完重开即可。
+   Missing WebView2 runtime. The app will offer a download link.
+
+2) 蓝色「Windows 已保护你的电脑」：exe 没有购买代码签名，属于正常提示。
+   点「更多信息」→「仍要运行」。
+   Unsigned exe -> More info -> Run anyway.
+
+3) 杀毒软件报毒或直接删文件：PyInstaller 打包的程序常被启发式引擎误报。
+   把文件夹加白名单，或改用 release 里的 portable（文件夹）版本。
+   False positive. Whitelist the folder, or use the portable build.
+
+4) 只有 Windows 10/11 64 位能用，不支持 macOS / Linux / 32 位系统。
+   Windows 10/11 x64 only.
+
+设为 .md 默认打开方式 / Default .md handler
+----------------------------------------
+把 register-md.bat 和 MdReader.exe 放在同一个文件夹，双击 bat，
+然后右键任意 .md → 打开方式 → 选择其他应用 → Markdown Document → 始终使用。
+Run register-md.bat from the same folder as the exe.
+
+完整说明见 README.md / Full docs: README.md

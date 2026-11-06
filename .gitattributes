@@ -1,0 +1,7 @@
+# 源码统一 LF；.bat 必须 CRLF，否则某些 Windows 环境下 cmd 解析出错
+* text=auto eol=lf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.exe   binary
+*.ico   binary
+*.png   binary

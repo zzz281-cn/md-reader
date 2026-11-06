@@ -1,0 +1,22 @@
+# PyInstaller 中间产物与输出
+build/
+dist/
+dist-onefile/
+MdReader/
+*.manifest
+*.spec.bak
+
+# 构建出来的 exe 不进仓库，走 GitHub Release 分发
+*.exe
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 本地产物
+*.log
+sheet-light.png
+icon-verify.png
