@@ -20,3 +20,7 @@ venv/
 *.log
 sheet-light.png
 icon-verify.png
+
+# CI 本地演练产物
+stage/
+RELEASE_NOTES.md

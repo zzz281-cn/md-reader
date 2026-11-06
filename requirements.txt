@@ -1,0 +1,7 @@
+# 运行时依赖
+pywebview==6.2.1
+pythonnet==3.2.1
+
+# 构建与资源工具
+pyinstaller==6.22.3
+pillow==13.0.0

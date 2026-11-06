@@ -1,0 +1,123 @@
+name: build
+
+# 打 tag（v1.0.1 这种）时自动出包并挂到 Release；
+# 手动触发（Actions 页面点 Run workflow）只出 artifact，不碰 Release，用来验证构建链。
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write        # 创建 Release、上传资产需要
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $v = $env:GITHUB_REF_NAME.TrimStart('v')
+          } else {
+            $v = 'dev-' + $env:GITHUB_SHA.Substring(0, 7)
+          }
+          Write-Output "version = $v"
+          "value=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Stamp version into exe metadata
+        run: python stamp_version.py "${{ steps.version.outputs.value }}"
+
+      - name: Build single-file exe
+        run: python -m PyInstaller MdReaderOne.spec --noconfirm --distpath dist-onefile
+
+      - name: Build portable folder
+        run: python -m PyInstaller MdReader.spec --noconfirm --distpath dist-portable
+
+      - name: Assemble archives
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.value }}"
+          $single   = "MdReader-$ver-win-x64"
+          $portable = "MdReader-$ver-win-x64-portable"
+          $docs = @("register-md.bat", "README.md", "release-notes\READ-ME-FIRST.txt")
+
+          # 单文件版：exe 直接放在包根
+          $d = Join-Path stage $single
+          New-Item -ItemType Directory -Force -Path $d | Out-Null
+          Copy-Item "dist-onefile\MdReader.exe" $d
+          Copy-Item $docs $d
+
+          # 便携版：把 MdReader\ 目录里的内容摊到包根，让 register-md.bat 和 exe 同级。
+          # 如果保留 MdReader\ 这一层，bat 的 %~dp0 就找不到 exe 了。
+          $d = Join-Path stage $portable
+          New-Item -ItemType Directory -Force -Path $d | Out-Null
+          Copy-Item "dist-portable\MdReader\*" $d -Recurse
+          Copy-Item $docs $d
+
+          Compress-Archive -Path (Join-Path stage $single)   -DestinationPath "$single.zip"   -Force
+          Compress-Archive -Path (Join-Path stage $portable) -DestinationPath "$portable.zip" -Force
+
+          Get-ChildItem *.zip | ForEach-Object {
+            Write-Output ("{0}  {1} MB" -f $_.Name, [math]::Round($_.Length / 1MB, 1))
+          }
+
+      - name: Verify archives
+        shell: pwsh
+        run: |
+          # 光有 zip 不算数，得确认里面真的躺着能跑的东西
+          $ver = "${{ steps.version.outputs.value }}"
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          foreach ($n in @("MdReader-$ver-win-x64", "MdReader-$ver-win-x64-portable")) {
+            $zip = [System.IO.Compression.ZipFile]::OpenRead("$n.zip")
+            $names = $zip.Entries | ForEach-Object { $_.FullName }
+            $zip.Dispose()
+            $exe = $names | Where-Object { $_ -eq "$n/MdReader.exe" }
+            $bat = $names | Where-Object { $_ -eq "$n/register-md.bat" }
+            if (-not $exe) { throw "$n.zip 里没有 $n/MdReader.exe，包结构不对" }
+            if (-not $bat) { throw "$n.zip 里没有 $n/register-md.bat" }
+            Write-Output ("{0}.zip  OK - {1} 项，exe 与 bat 同级" -f $n, $names.Count)
+          }
+
+      - name: Compose release notes
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.value }}"
+          $s1 = (Get-FileHash "MdReader-$ver-win-x64.zip"          -Algorithm SHA256).Hash.ToLower()
+          $s2 = (Get-FileHash "MdReader-$ver-win-x64-portable.zip" -Algorithm SHA256).Hash.ToLower()
+          $tpl = Get-Content "release-notes\TEMPLATE.md" -Raw
+          $tpl = $tpl.Replace('{{VERSION}}', $ver).Replace('{{SHA_SINGLE}}', $s1).Replace('{{SHA_PORTABLE}}', $s2)
+          $tpl | Out-File -FilePath RELEASE_NOTES.md -Encoding utf8
+          Write-Output "release notes 已生成（$ver）"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MdReader-${{ steps.version.outputs.value }}
+          path: MdReader-*.zip
+          retention-days: 14
+
+      - uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            MdReader-${{ steps.version.outputs.value }}-win-x64.zip
+            MdReader-${{ steps.version.outputs.value }}-win-x64-portable.zip
+          fail_on_unmatched_files: true
